@@ -8,7 +8,6 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -27,51 +26,37 @@ jobs:
         with:
           context: .
           push: true
-          tags: victorsoaresho/provavollo:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/provavollo:latest # Nome da imagem consistente
 
-  sonar-analysis-and-deploy:
-    needs: build-and-push
+  deploy-application:
+    needs: build-and-push # Depende do sucesso do build e push
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout do repositório
+        uses: actions/checkout@v3 # Necessário para pegar o docker-compose.yml
 
-      - name: Setup SSH key
-        uses: webfactory/ssh-agent@v0.5.4
+      - name: Copiar docker-compose.yml para servidor remoto
+        uses: appleboy/scp-action@v0.1.4
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: 201.23.3.86
+          username: aluno
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "./docker-compose.yml" # Certifique-se que este yml usa a imagem correta
+          target: "~/app"
+          strip_components: 0 # Copia o arquivo diretamente para dentro de ~/app
 
-      - name: Run SonarQube analysis on remote server
-        run: |
-          ssh -o StrictHostKeyChecking=no aluno@201.23.3.86 << 'EOF'
-            # Puxa e executa o container do SonarQube temporário
-            docker run -d --name sonarqube-temp -p 9000:9000 sonarqube:latest
-            sleep 60  # Espera o SonarQube subir
-
-            # Executa análise do código com scanner apontando para esse SonarQube
-            # Assumindo que você tenha o scanner instalado ou usando um container
-            sonar-scanner \
-              -Dsonar.projectKey=your_project_key \
-              -Dsonar.host.url=http://localhost:9000 \
-              -Dsonar.login=your_sonar_token \
-              || exit 1
-
-            # Para e remove container sonarqube
-            docker stop sonarqube-temp
-            docker rm sonarqube-temp
-          EOF
-
-      - name: Deploy application container remotely
-        run: |
-          ssh aluno@201.23.3.86 << 'EOF'
-            # Para e remove container antigo, se existir
-            docker stop app || true
-            docker rm app || true
-
-            # Puxa a imagem mais recente do Docker Hub
-            docker pull yourdockerhubusername/yourapp:latest
-
-            # Executa a aplicação em container
-            docker run -d --name app -p 3000:3000 yourdockerhubusername/yourapp:latest
-          EOF
+      - name: Deploy usando docker-compose no servidor remoto
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: 201.23.3.86
+          username: aluno
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/app
+            echo "Parando e removendo contêineres antigos..."
+            docker compose down --remove-orphans || true
+            echo "Puxando nova imagem do Docker Hub..."
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/provavollo:latest # Puxa a imagem correta
+            echo "Iniciando novos contêineres com Docker Compose..."
+            docker compose up -d --build # --build pode ser opcional se o compose.yml só referencia a imagem
+            echo "Deploy concluído."
