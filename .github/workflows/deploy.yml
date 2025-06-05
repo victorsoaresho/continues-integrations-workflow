@@ -55,6 +55,7 @@ jobs:
           script: |
             echo "Acessando pasta de trabalho..."
             cd ~/launchstore
+            docker image prune -a
 
             echo "Parando e removendo contêineres antigos..."
             docker compose down --remove-orphans || true
