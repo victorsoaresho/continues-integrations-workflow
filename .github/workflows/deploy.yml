@@ -57,7 +57,7 @@ jobs:
             echo "Parando e removendo contêineres antigos..."
             docker compose down --remove-orphans || true
             echo "Puxando nova imagem do Docker Hub..."
-            docker pull $DOCKERHUB_USERNAME/provavollo:latest
+            docker pull victorsoaresho/provavollo:latest
             echo "Iniciando novos contêineres com Docker Compose..."
             docker compose up -d
             echo "Deploy concluído."
