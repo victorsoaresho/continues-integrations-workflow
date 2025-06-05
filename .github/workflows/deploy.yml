@@ -51,12 +51,13 @@ jobs:
           host: 201.23.3.86
           username: aluno
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: DOCKERHUB_USERNAME
           script: |
-            cd ~/launchstore"
+            cd ~/launchstore
             echo "Parando e removendo contêineres antigos..."
             docker compose down --remove-orphans || true
             echo "Puxando nova imagem do Docker Hub..."
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/provavollo:latest
+            docker pull $DOCKERHUB_USERNAME/provavollo:latest
             echo "Iniciando novos contêineres com Docker Compose..."
             docker compose up -d
             echo "Deploy concluído."
