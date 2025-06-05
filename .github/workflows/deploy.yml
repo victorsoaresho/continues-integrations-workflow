@@ -53,11 +53,21 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           envs: DOCKERHUB_USERNAME
           script: |
+            echo "Acessando pasta de trabalho..."
             cd ~/launchstore
+
             echo "Parando e removendo contêineres antigos..."
             docker compose down --remove-orphans || true
+
             echo "Puxando nova imagem do Docker Hub..."
             docker pull victorsoaresho/provavollo:latest
+
+            echo "Extraindo arquivos da imagem para ~/launchstore..."
+            container_id=$(docker create victorsoaresho/provavollo:latest)
+            docker cp "$container_id":/app ./
+            docker rm "$container_id"
+
             echo "Iniciando novos contêineres com Docker Compose..."
             docker compose up -d
+
             echo "Deploy concluído."
