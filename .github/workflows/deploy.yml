@@ -26,37 +26,37 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/provavollo:latest # Nome da imagem consistente
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/provavollo:latest
 
   deploy-application:
-    needs: build-and-push # Depende do sucesso do build e push
+    needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout do repositório
-        uses: actions/checkout@v3 # Necessário para pegar o docker-compose.yml
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - name: Copiar docker-compose.yml para servidor remoto
+      - name: Copy docker-compose.yml to remote server
         uses: appleboy/scp-action@v0.1.4
         with:
           host: 201.23.3.86
           username: aluno
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "./docker-compose.yml" # Certifique-se que este yml usa a imagem correta
-          target: "~/app"
-          strip_components: 0 # Copia o arquivo diretamente para dentro de ~/app
+          source: "./docker-compose.yml"
+          target: "~/launchstore"
+          strip_components: 0
 
-      - name: Deploy usando docker-compose no servidor remoto
+      - name: Deploy with Docker Compose on remote server
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: 201.23.3.86
           username: aluno
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ~/app
+            cd ~/launchstore"
             echo "Parando e removendo contêineres antigos..."
             docker compose down --remove-orphans || true
             echo "Puxando nova imagem do Docker Hub..."
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/provavollo:latest # Puxa a imagem correta
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/provavollo:latest
             echo "Iniciando novos contêineres com Docker Compose..."
-            docker compose up -d --build # --build pode ser opcional se o compose.yml só referencia a imagem
+            docker compose up -d
             echo "Deploy concluído."
