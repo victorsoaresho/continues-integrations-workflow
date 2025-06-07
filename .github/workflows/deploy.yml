@@ -70,7 +70,7 @@ jobs:
               -Dsonar.projectKey=victorsoaresho_continues-integrations-workflow \
               -Dsonar.sources=. \
               -Dsonar.host.url=http://localhost:8221 \
-              -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+              -Dsonar.login=51fc345ffb4e5b35948f1150f4c4c5b7d18013f6
 
             echo "Parando o container do SonarQube..."
             docker stop sonarqube && docker rm sonarqube
