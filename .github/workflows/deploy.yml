@@ -68,6 +68,7 @@ jobs:
             docker rm "$container_id"
 
             echo "Iniciando novos contêineres com Docker Compose..."
-            docker compose up -d
+            cd app/
+            docker compose up -d --build
 
             echo "Deploy concluído."
