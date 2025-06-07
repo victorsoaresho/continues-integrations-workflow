@@ -56,15 +56,7 @@ jobs:
             docker run -d --name sonarqube -p 8221:9000 sonarqube
 
             echo "Aguardando o SonarQube iniciar..."
-            sleep 60
-
-            echo "Instalando sonar-scanner..."
-            sudo apt-get update && sudo apt-get install -y unzip wget
-            wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
-            unzip sonar-scanner-cli-5.0.1.3006-linux.zip
-            export PATH=$PATH:$PWD/sonar-scanner-5.0.1.3006-linux/bin
-
-            echo "Executando análise com sonar-scanner..."
+            sleep 45
             cd ~/launchstore/app
             sonar-scanner \
               -Dsonar.projectKey=victorsoaresho_continues-integrations-workflow \
