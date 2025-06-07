@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: Pipeline de CI/CD
 
 on:
   push:
@@ -6,36 +6,36 @@ on:
       - main
 
 jobs:
-  build-and-push:
+  construir-e-enviar-imagem:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Baixar código do repositório
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
+      - name: Configurar Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Log in to Docker Hub
+      - name: Fazer login no Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Construir e enviar imagem Docker
         uses: docker/build-push-action@v4
         with:
           context: .
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/provavollo:latest
 
-  deploy-application:
-    needs: build-and-push
+  fazer-deploy-aplicacao:
+    needs: construir-e-enviar-imagem
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Baixar código do repositório
         uses: actions/checkout@v3
 
-      - name: Copy docker-compose.yml to remote server
+      - name: Copiar docker-compose.yml para o servidor remoto
         uses: appleboy/scp-action@v0.1.4
         with:
           host: 201.23.3.86
@@ -45,17 +45,17 @@ jobs:
           target: "~/launchstore"
           strip_components: 0
 
-      - name: Executar análise SonarQube no servidor remoto
+      - name: Executar análise com SonarQube no servidor remoto
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: 201.23.3.86
           username: aluno
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            echo "Subindo container do SonarQube..."
+            echo "Iniciando container do SonarQube..."
             docker run -d --name sonarqube -p 8221:9000 sonarqube
 
-            echo "Aguardando o SonarQube iniciar..."
+            echo "Aguardando o SonarQube inicializar (45s)..."
             sleep 45
             cd ~/launchstore/app
             sonar-scanner \
@@ -64,10 +64,10 @@ jobs:
               -Dsonar.host.url=http://localhost:8221 \
               -Dsonar.login=51fc345ffb4e5b35948f1150f4c4c5b7d18013f6
 
-            echo "Parando o container do SonarQube..."
+            echo "Encerrando container do SonarQube..."
             docker stop sonarqube && docker rm sonarqube
 
-      - name: Deploy with Docker Compose on remote server
+      - name: Fazer deploy com Docker Compose no servidor remoto
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: 201.23.3.86
@@ -75,22 +75,22 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           envs: DOCKERHUB_USERNAME
           script: |
-            echo "Acessando pasta de trabalho..."
+            echo "Acessando diretório da aplicação..."
             cd ~/launchstore
 
-            echo "Parando e removendo contêineres antigos..."
+            echo "Parando e removendo contêineres antigos (se houver)..."
             docker compose down --remove-orphans || true
 
-            echo "Puxando nova imagem do Docker Hub..."
+            echo "Baixando a nova imagem do Docker Hub..."
             docker pull victorsoaresho/provavollo:latest
 
-            echo "Extraindo arquivos da imagem para ~/launchstore..."
+            echo "Extraindo arquivos da nova imagem para ~/launchstore..."
             container_id=$(docker create victorsoaresho/provavollo:latest)
             docker cp "$container_id":/app ./
             docker rm "$container_id"
 
-            echo "Iniciando novos contêineres com Docker Compose..."
+            echo "Inicializando os novos contêineres com Docker Compose..."
             cd app/
             docker compose up -d --build
 
-            echo "Deploy concluído."
+            echo "Deploy finalizado com sucesso."
