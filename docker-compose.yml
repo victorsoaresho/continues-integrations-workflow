@@ -15,7 +15,7 @@ services:
     image: postgres:15
     restart: always
     environment:
-      POSTGRES_USER: postgres
+      POSTGRES_USER: victorsoaresho
       POSTGRES_PASSWORD: senha
       POSTGRES_DB: launchstore
     ports:
