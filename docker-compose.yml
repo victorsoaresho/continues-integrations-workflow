@@ -8,17 +8,20 @@ services:
     volumes:
       - .:/app
     environment:
-      DATABASE_URL: postgres://victorsoaresho:senha@db:5432/launchstore
+      DATABASE_URL: postgres://victorsoaresho:senha@db:8226/launchstore
+    depends_on:
+      - db
     # O comando principal será o CMD do Dockerfile (npm start)
 
   db:
     image: postgres:15
     restart: always
+    command: postgres -c port=8226
     environment:
       POSTGRES_USER: victorsoaresho
       POSTGRES_PASSWORD: senha
       POSTGRES_DB: launchstore
     ports:
-      - "8225:5432"
+      - "8225:8226"  # host:container
     volumes:
       - ./database.sql:/docker-entrypoint-initdb.d/database.sql:ro
