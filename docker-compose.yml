@@ -4,7 +4,7 @@ services:
   app:
     build: .
     ports:
-      - "8220:3000"
+      - "8224:3000"
     volumes:
       - .:/app
     environment:
@@ -19,6 +19,6 @@ services:
       POSTGRES_PASSWORD: senha
       POSTGRES_DB: launchstore
     ports:
-      - "8219:5432"
+      - "8225:5432"
     volumes:
       - ./database.sql:/docker-entrypoint-initdb.d/database.sql:ro
