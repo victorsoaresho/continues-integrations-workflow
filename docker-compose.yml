@@ -8,7 +8,7 @@ services:
     volumes:
       - .:/app
     environment:
-      DATABASE_URL: postgres://postgres:senha@db:5432/launchstore
+      DATABASE_URL: postgres://victorsoaresho:senha@db:5432/launchstore
     # O comando principal será o CMD do Dockerfile (npm start)
 
   db:
