@@ -45,28 +45,6 @@ jobs:
           target: "~/launchstore"
           strip_components: 0
 
-      - name: Executar análise com SonarQube no servidor remoto
-        uses: appleboy/ssh-action@v0.1.10
-        with:
-          host: 201.23.3.86
-          username: aluno
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            echo "Iniciando container do SonarQube..."
-            docker run -d --name sonarqube -p 8221:9000 sonarqube
-
-            echo "Aguardando o SonarQube inicializar (45s)..."
-            sleep 45
-            cd ~/launchstore/app
-            sonar-scanner \
-              -Dsonar.projectKey=victorsoaresho_continues-integrations-workflow \
-              -Dsonar.sources=. \
-              -Dsonar.host.url=http://localhost:8221 \
-              -Dsonar.login=51fc345ffb4e5b35948f1150f4c4c5b7d18013f6
-
-            echo "Encerrando container do SonarQube..."
-            docker stop sonarqube && docker rm sonarqube
-
       - name: Fazer deploy com Docker Compose no servidor remoto
         uses: appleboy/ssh-action@v0.1.10
         with:
