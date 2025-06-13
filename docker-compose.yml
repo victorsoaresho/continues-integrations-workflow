@@ -2,7 +2,7 @@ services:
   app:
     build: .
     ports:
-      - "8224:3000"
+      - "8224:8224"
     volumes:
       - .:/app
     environment:
