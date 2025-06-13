@@ -7,7 +7,7 @@ services:
       - .:/app
     environment:
       # Corrigido para apontar para a porta padrão do Postgres
-      DATABASE_URL: postgres://victorsoaresho:senha@db:5432/launchstore
+      DATABASE_URL: postgres://victorsoaresho:senha@db:8226/launchstore
     depends_on:
       - db
     # O comando principal será o CMD do Dockerfile (npm start)
@@ -15,6 +15,9 @@ services:
   db:
     image: postgres:15
     restart: always
+    command: postgres -c port=8226
+
+
     # Removido comando que alterava a porta interna
     environment:
       POSTGRES_USER: victorsoaresho
@@ -22,6 +25,6 @@ services:
       POSTGRES_DB: launchstore
     ports:
       # Mapeamento corrigido e único: porta 8225 do host para 5432 do container
-      - "8225:5432"
+      - "8225:8226"
     volumes:
       - ./database.sql:/docker-entrypoint-initdb.d/database.sql:ro
