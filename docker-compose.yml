@@ -1,4 +1,4 @@
-version: '3.8'
+
 
 services:
   app:
@@ -22,6 +22,7 @@ services:
       POSTGRES_PASSWORD: senha
       POSTGRES_DB: launchstore
     ports:
+      - "8225:5432"
       - "8225:8226"  # host:container
     volumes:
       - ./database.sql:/docker-entrypoint-initdb.d/database.sql:ro
