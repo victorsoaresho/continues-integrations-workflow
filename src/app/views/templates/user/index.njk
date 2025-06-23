@@ -2,7 +2,7 @@
 {% import "partials/card.njk" as card %}
 
 {% block content %}
-  {% call card.render("Detalhes", "user-dashboard container") %}
+  {% call card.render("Teste", "user-dashboard container") %}
   <form method="POST" action="/users?_method=PUT">
     <div class="fields">
       {% include "templates/user/fields.njk" %}
