@@ -21,12 +21,12 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Construir e enviar imagem Docker
+      - name: Construir e enviar imagem Docker (Aplicação)
         uses: docker/build-push-action@v4
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/provavollo:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/launchstore_app:latest
 
   fazer-deploy-aplicacao:
     needs: construir-e-enviar-imagem
@@ -35,17 +35,17 @@ jobs:
       - name: Baixar código do repositório
         uses: actions/checkout@v3
 
-      - name: Copiar docker-compose.yml para o servidor remoto
+      - name: Copiar database.sql para o servidor remoto
         uses: appleboy/scp-action@v0.1.4
         with:
           host: 201.23.3.86
           username: aluno
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "./docker-compose.yml"
-          target: "~/launchstore"
+          source: "./database.sql"
+          target: "~/launchstore/"
           strip_components: 0
 
-      - name: Fazer deploy com Docker Compose no servidor remoto
+      - name: Conectar ao servidor remoto e fazer deploy
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: 201.23.3.86
@@ -53,22 +53,44 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           envs: DOCKERHUB_USERNAME
           script: |
-            echo "Acessando diretório da aplicação..."
-            cd ~/launchstore
-
             echo "Parando e removendo contêineres antigos (se houver)..."
-            docker compose down --remove-orphans || true
+            docker stop launchstore_app || true
+            docker rm launchstore_app || true
+            docker stop launchstore_db || true
+            docker rm launchstore_db || true
 
-            echo "Baixando a nova imagem do Docker Hub..."
-            docker pull victorsoaresho/provavollo:latest
+            echo "Removendo rede Docker antiga (se houver)..."
+            docker network rm launchstore-network || true
 
-            echo "Extraindo arquivos da nova imagem para ~/launchstore..."
-            container_id=$(docker create victorsoaresho/provavollo:latest)
-            docker cp "$container_id":/app ./
-            docker rm "$container_id"
+            echo "Criando nova rede Docker..."
+            docker network create launchstore-network
 
-            echo "Inicializando os novos contêineres com Docker Compose..."
-            cd app/
-            docker compose up -d --build
+            echo "Iniciando o contêiner do PostgreSQL..."
+            docker run -d \
+              --name launchstore_db \
+              --network launchstore-network \
+              -p 8225:5432 \
+              -e POSTGRES_USER=victorsoaresho \
+              -e POSTGRES_PASSWORD=senha \
+              -e POSTGRES_DB=launchstore \
+              -v pgdata:/var/lib/postgresql/data \
+              postgres:15
+
+            echo "Aguardando o PostgreSQL iniciar..."
+            sleep 10 # Tempo de espera para o DB iniciar, ajuste conforme necessário
+
+            echo "Executando o script database.sql no contêiner do PostgreSQL..."
+            docker cp ~/launchstore/database.sql launchstore_db:/tmp/database.sql
+            docker exec -u postgres launchstore_db psql -d launchstore -f /tmp/database.sql
+
+            echo "Baixando a nova imagem da aplicação do Docker Hub..."
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/launchstore_app:latest
+
+            echo "Inicializando o contêiner da aplicação..."
+            docker run -d \
+              --name launchstore_app \
+              --network launchstore-network \
+              -p 8224:8224 \
+              ${{ secrets.DOCKERHUB_USERNAME }}/launchstore_app:latest
 
             echo "Deploy finalizado com sucesso."
