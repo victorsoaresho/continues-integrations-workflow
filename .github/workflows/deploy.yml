@@ -93,4 +93,6 @@ jobs:
               -p 8224:8224 \
               ${{ secrets.DOCKERHUB_USERNAME }}/launchstore_app:latest
 
+            docker exec -i launchstore_db  psql -U victorsoaresho -d launchstore < database.sql
+
             echo "Deploy finalizado com sucesso."
